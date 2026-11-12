@@ -24,6 +24,7 @@ class MissionEnv(gym.Env):
         self.observation_space = spaces.Box(0, 1, (12,), dtype=np.float32)
         self.max_steps = max_steps
         self.final_goal_assist = final_goal_assist
+        self._distance_maps = {}
         self.reset()
 
     @property
@@ -52,6 +53,21 @@ class MissionEnv(gym.Env):
         return {'position':self.robot, 'stage':STAGE_NAMES[self.stage],
                 'wait_seconds':self.wait_count, 'carrying':self.carrying,
                 'collision':collision, 'success':self.stage==3, 'steps':self.steps}
+
+    def _distance(self, position, target):
+        # Reverse BFS cached for the three fixed mission destinations.
+        if target not in self._distance_maps:
+            dist = {target: 0}
+            queue = deque([target])
+            while queue:
+                current = queue.popleft()
+                for dx, dy in DELTAS:
+                    nxt = (current[0] + dx, current[1] + dy)
+                    if not self.layout.blocked(nxt) and nxt not in dist:
+                        dist[nxt] = dist[current] + 1
+                        queue.append(nxt)
+            self._distance_maps[target] = dist
+        return self._distance_maps[target][position]
 
     def step(self, action):
         if not self.action_space.contains(action):
@@ -97,8 +113,8 @@ class MissionEnv(gym.Env):
             if self.stage < 2:
                 self.wait_count = 0  # moving off station interrupts service
             # Reward actual path progress around shelves, not straight-line distance.
-            old_dist = len(shortest_path(old, old_target, self.layout)) - 1
-            new_dist = len(shortest_path(self.robot, old_target, self.layout)) - 1
+            old_dist = self._distance(old, old_target)
+            new_dist = self._distance(self.robot, old_target)
             reward += 0.5 * (old_dist - new_dist)
         if self.stage == 2 and self.robot == self.layout.goal:
             self.stage = 3

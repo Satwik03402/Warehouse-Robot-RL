@@ -18,19 +18,23 @@ class GoalNavigationEnv(gym.Env):
         self.observation_space = spaces.Box(0, 1, shape=(26,), dtype=np.float32)
         self.free = [(x,y) for x in range(self.layout.width) for y in range(self.layout.height)
                      if not self.layout.blocked((x,y))]
+        self._distance_cache = {}
         self.reset(seed=0)
 
     def _dist(self, start, target):
-        if start == target: return 0
-        visited = {start}; q = deque([(start,0)])
-        while q:
-            pos, d = q.popleft()
-            for dx,dy in DELTAS:
-                p = (pos[0]+dx,pos[1]+dy)
-                if self.layout.blocked(p) or p in visited: continue
-                if p == target:return d+1
-                visited.add(p);q.append((p,d+1))
-        return None
+        # Cache reverse BFS distance maps: exact same rewards, much faster training.
+        if target not in self._distance_cache:
+            distances = {target: 0}
+            q = deque([target])
+            while q:
+                pos = q.popleft()
+                for dx, dy in DELTAS:
+                    nxt = (pos[0]+dx, pos[1]+dy)
+                    if not self.layout.blocked(nxt) and nxt not in distances:
+                        distances[nxt] = distances[pos] + 1
+                        q.append(nxt)
+            self._distance_cache[target] = distances
+        return self._distance_cache[target].get(start)
 
     def _obs(self):
         x,y=self.robot; gx,gy=self.goal
