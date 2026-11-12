@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Training logs
+*.tfevents.*
+*.csv
+*.log
+runs/
+logs/
+
+# Model checkpoints and generated outputs
+outputs/
+
+# IDE
+.vscode/
+.idea/
+
+# Operating system
+.DS_Store
