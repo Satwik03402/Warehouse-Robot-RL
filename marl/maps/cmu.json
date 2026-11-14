@@ -1,0 +1,21 @@
+{
+  "name": "cmu",
+  "title": "CMU",
+  "source": "De Hauwere, Vrancx & Nowe, AAMAS 2010, Figure 5; transcribed with marl/maps/extract_fig5.py",
+  "note": "Each agent starts on the other agent's goal.",
+  "expected_free_cells": 133,
+  "grid": [
+    "###.#.#.#.#.#.######.#.#.#.#.#.#.#",
+    "#.................................",
+    "#####.#.#.#.#.#.##.#.#.#.#.#.#.#.#",
+    "####..#########.##.#########.#####",
+    "#.#.#.#.#.#.#.#....#.#.#.#.#.#.#.#",
+    "..................................",
+    "#.#.#.#.#.#.#.#.##.#.#.#.#.#.#.#.#"
+  ],
+  "walls": [],
+  "agents": [
+    {"start": [3, 0], "goal": [32, 0]},
+    {"start": [32, 0], "goal": [3, 0]}
+  ]
+}
