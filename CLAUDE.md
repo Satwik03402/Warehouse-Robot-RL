@@ -105,6 +105,18 @@ python3 -m marl.maps.extract_fig5 page-6.png                 # re-derive maps fr
 - Prior-training choices the paper leaves open: γ = 0.95, max 500 steps per episode, fixed starts, optimistic `q_init` = 20.
   - Without optimism, 5 of 20 CMU runs lock onto a detour at α = 0.05.
   - With it, all 100 runs follow the shortest path. Off-path cells are less accurate (policy agreement with Q* is 0.43–0.87).
+- `marl/arena.py`: `MultiRobotEnv`, N robots moving simultaneously. **The collision rules were decided with the user:**
+  - Swap or same-cell: everyone involved stays put and gets −10.
+  - Moving into a robot that stays put: only the mover gets −10.
+  - Following into a cell being vacated is allowed.
+  - Failed moves (`p_fail`) leave the robot in place with no penalty.
+  - A robot that reaches its goal gets +20 and leaves the grid; the episode ends when all robots are done.
+  - Resolution repeats to a fixed point, so cascades are handled. With N = 1 the arena equals `SingleRobotEnv` (tested).
+- `marl/baselines.py`:
+  - `IndepLearner` (own cell) and `JointStateLearner` (Q over own cell × the other robot's cell; a finished robot is index `n_cells`), sharing an `act/update` interface.
+  - `train()`, `evaluate()` (one greedy episode, since the maps are deterministic) and `run_episode()`. CQ-learning should plug into the same loop.
+- `python3 -m scripts.train_baselines` runs Indep + JS × 5 maps × 10 seeds with paper settings and Q₀ = 0. It prints a Table 1-style summary next to the paper's numbers, and writes to `outputs/baselines/`.
+- Greedy Indep play can **deadlock**: both robots keep choosing the same cell, collide and stay put, e.g. at TTG's tunnel entrance. A robot that never arrives is counted as `max_steps`.
 - Table 1 "#steps" doesn't match single-robot shortest paths directly. ISR's shortest path is 4, but CQ reports 5; TR's is 10, but Indep reports 9. Don't use it to validate the single-agent prior.
 
 ## Architecture
