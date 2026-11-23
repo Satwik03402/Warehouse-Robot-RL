@@ -3,7 +3,9 @@
 Rewards follow De Hauwere et al. (2010): +20 for reaching the goal, -1 for moving into a wall
 (the robot stays put), 0 otherwise. The -10 robot-collision reward cannot occur with one robot,
 but it lives in the same RewardConfig so the multi-robot arena uses identical numbers.
-Transitions are deterministic, as in the paper.
+Transitions are deterministic, as in the paper, unless p_fail > 0: then a move fails with
+that probability and the robot stays put with the plain step reward (no penalty), matching
+MultiRobotEnv. CQ-learning's prior must be learned with the same p_fail as the test setting.
 """
 from dataclasses import asdict, dataclass
 
@@ -26,8 +28,10 @@ class RewardConfig:
 
 
 class SingleRobotEnv:
-    def __init__(self, grid, start, goal, rewards=RewardConfig(), max_steps=500, seed=None):
+    def __init__(self, grid, start, goal, rewards=RewardConfig(), max_steps=500, seed=None,
+                 p_fail=0.0):
         self.grid = grid
+        self.p_fail = p_fail
         self.start = grid.idx(start)
         self.goal = grid.idx(goal)
         self.rewards = rewards
@@ -52,12 +56,14 @@ class SingleRobotEnv:
 
     def step(self, action):
         s = self.state
-        bump = bool(self.grid.bumps[s, action])
-        reward = self.expected_reward(s, action)
+        failed = self.p_fail > 0 and self.rng.random() < self.p_fail
+        bump = not failed and bool(self.grid.bumps[s, action])
+        reward = self.rewards.step if failed else self.expected_reward(s, action)
         if self.rewards.noise_sigma > 0:
             reward += self.rng.normal(0.0, self.rewards.noise_sigma)
-        self.state = int(self.grid.next_state[s, action])
+        if not failed:
+            self.state = int(self.grid.next_state[s, action])
         self.steps += 1
         done = self.state == self.goal
         truncated = not done and self.steps >= self.max_steps
-        return self.state, float(reward), done, truncated, {'bump': bump}
+        return self.state, float(reward), done, truncated, {'bump': bump, 'failed': failed}

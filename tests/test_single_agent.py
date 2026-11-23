@@ -10,7 +10,7 @@ RIGHT, UP, LEFT, DOWN = range(4)
 
 
 def test_all_paper_maps_present_with_table1_cell_counts():
-    assert available_maps() == sorted(PAPER_FREE_CELLS)
+    assert set(PAPER_FREE_CELLS) <= set(available_maps())  # plus our own maps, e.g. warehouse
     for name, n in PAPER_FREE_CELLS.items():
         g = Grid.load(name)
         assert g.n_states == n

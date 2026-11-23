@@ -92,14 +92,19 @@ def train(env, learners, episodes=10_000, epsilon=0.1, seed=0):
     return dict(steps=steps, collisions=collisions, success=success)
 
 
-def evaluate(env, learners):
-    """Greedy play (epsilon = 0). The paper's maps are deterministic, so one episode suffices."""
-    to_goal, coll, total = run_episode(env, learners)
-    reached = [t is not None for t in to_goal]
+def evaluate(env, learners, episodes=1):
+    """Greedy play (epsilon = 0). With deterministic moves one episode suffices; with
+    p_fail > 0 the result is averaged over `episodes` episodes (the env's rng drives failures).
+    A robot that never arrives counts env.max_steps."""
+    runs = [run_episode(env, learners) for _ in range(episodes)]
+    per_robot = np.array([[t if t is not None else env.max_steps for t in tg] for tg, _, _ in runs])
+    ok = np.array([all(t is not None for t in tg) for tg, _, _ in runs])
+    coll = np.array([c.sum() for _, c, _ in runs])
     return dict(
-        success=all(reached),
-        steps_per_robot=[t if t is not None else env.max_steps for t in to_goal],
-        mean_steps=float(np.mean([t if t is not None else env.max_steps for t in to_goal])),
-        collisions=int(coll.sum()),
-        reward=total.tolist(),
+        success=bool(ok.all()),
+        success_rate=float(ok.mean()),
+        steps_per_robot=per_robot.mean(axis=0).tolist(),
+        mean_steps=float(per_robot.mean()),
+        collisions=float(coll.mean()),
+        reward=np.mean([tot for _, _, tot in runs], axis=0).tolist(),
     )

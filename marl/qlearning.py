@@ -78,7 +78,7 @@ def train(env: SingleRobotEnv, episodes=10_000, alpha=0.05, epsilon=0.1, gamma=0
                 break
     config = dict(episodes=episodes, alpha=alpha, epsilon=epsilon, gamma=gamma, seed=seed,
                   start_mode=start_mode, q_init=q_init, max_steps=env.max_steps,
-                  rewards=env.rewards.as_dict())
+                  rewards=env.rewards.as_dict(), p_fail=env.p_fail)
     return TrainResult(q, count, mean, m2, lengths, success, config)
 
 

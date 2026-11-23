@@ -115,7 +115,37 @@ python3 -m marl.maps.extract_fig5 page-6.png                 # re-derive maps fr
 - `marl/baselines.py`:
   - `IndepLearner` (own cell) and `JointStateLearner` (Q over own cell × the other robot's cell; a finished robot is index `n_cells`), sharing an `act/update` interface.
   - `train()`, `evaluate()` (one greedy episode, since the maps are deterministic) and `run_episode()`. CQ-learning should plug into the same loop.
-- `python3 -m scripts.train_baselines` runs Indep + JS × 5 maps × 10 seeds with paper settings and Q₀ = 0. It prints a Table 1-style summary next to the paper's numbers, and writes to `outputs/baselines/`.
+- `marl/cq.py`: `CQLearner`, using the same `act/update` interface, so `baselines.train/evaluate` run it unchanged.
+  - Frozen prior `q_local`, plus the prior's reward mean, variance and count.
+  - `qj` is a dict from a dangerous js tuple to a Q^j row. `n_states` = cells + |qj|. `coordination_cells()` gives heatmap counts.
+  - **Detection choices (user-approved, plus fixes found necessary):**
+    - Reward noise σ = 1 (env), window = last 20 rewards, at least 10 samples, 99% Welch t-test, Q^j initialised from Q_k.
+    - The test is **one-sided** (rewards worse than alone) and runs once per 10 new rewards.
+    - Joint samples are collected only after (s, a) is flagged, as in Alg. 1.
+    - Each (s, a, js) is tested once, then stays dangerous or **safe**.
+    - Without these, repeated testing at 1% marked 2–3× too many states, including states where the other robot is far away or gone.
+  - The `joint_bootstrap=True` variant (not the default; not the paper) bootstraps Q^j from Q^j at a dangerous next js.
+- **CQ prior:** 30k episodes, random (exploring) starts, `q_init` 20, the same `p_fail`, σ = 1.
+  - `train_baselines` checks that each prior's greedy solo path reaches the goal. If it doesn't, the prior is retrained with a new seed, up to 5 attempts, logged as `prior_attempts` in runs.csv. About 2% of priors needed a retry, e.g. at p = 0.2.
+  - With fixed starts, off-path cells keep stale optimistic values (45/69 CIT cells overestimated). Q^j bootstraps from Q_k, so retreating looks free and robots livelock.
+- **Known CQ limitation:** with p_fail = 0, greedy play is deterministic, and robots can fall into a symmetric 2-cycle livelock: both step back from a dangerous js, re-enter it, and repeat.
+  - Q^j's target uses the local table, which can't see that the retreat leads back into the conflict.
+  - Training (ε = 0.1) gets through; failed moves (p > 0) break the symmetry.
+  - Worst on narrow corridors (CIT head-on in a 1-wide corridor).
+- `marl/replay.py`: `load_run(npz)` rebuilds greedy policies for any method; `rollout(env, policies)` returns frames, including whether each robot is in a CQ coordination state.
+- `marl/maps/warehouse.json`: the existing `warehouse/layout.py` grid (16×12, 168 free cells). Robot 1 goes (1,1)→(14,10); robot 2 goes the reverse.
+  - `PAPER_MAPS` in `grid.py` lists the five paper maps; the scripts default to them.
+- `python3 -m scripts.train_baselines [--maps ...] [--methods indep js cq] [--p-fail p] [--out dir]` runs everything with paper settings.
+  - Indep/JS: Q₀ = 0, noise-free. CQ: noisy rewards.
+  - With p > 0, greedy evaluation averages 100 episodes.
+  - Outputs `runs.csv`, `summary.txt` and per-run npz files: Q tables, `qj*_keys/values` and `coord_cells*` for CQ, training curves.
+- `python3 -m scripts.make_figures <run dirs...>`: coordination heatmaps, training curves and size-vs-steps per run; `pfail_<map>.png` when given several p runs.
+- `python3 -m scripts.replay_gif <run dir> --map warehouse --seed 0 [--methods ...] [--p-fail p]`: side-by-side GIF demo with Pillow, no display needed. The ring marks a robot acting on Q^j.
+- `.venv/bin/python -m scripts.render3d <run dir> --seed 0 [--method cq] [--p-fail p] [--orbit]` makes an MP4 of the trained policy in a 3D PyBullet warehouse.
+  - Runs headless: DIRECT mode, `ER_TINY_RENDERER`, ffmpeg. About 2.5 min at 720p.
+  - Green halo = coordinating, red halo = collision.
+  - PyBullet is only in the project `.venv` (built with `--system-site-packages`, git-ignored), not in the system python3.
+- Runtimes on 12 cores: warehouse, 3 methods × 10 seeds ≈ 4 min at p = 0 (JS is the slowest, ~150 s per seed); Table 1, 5 maps × 3 methods ≈ 30 min.
 - Greedy Indep play can **deadlock**: both robots keep choosing the same cell, collide and stay put, e.g. at TTG's tunnel entrance. A robot that never arrives is counted as `max_steps`.
 - Table 1 "#steps" doesn't match single-robot shortest paths directly. ISR's shortest path is 4, but CQ reports 5; TR's is 10, but Indep reports 9. Don't use it to validate the single-agent prior.
 

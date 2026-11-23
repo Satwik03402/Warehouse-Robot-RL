@@ -19,7 +19,7 @@ from pathlib import Path
 
 import numpy as np
 
-from marl.grid import Grid, available_maps
+from marl.grid import PAPER_MAPS, Grid, available_maps
 from marl.qlearning import greedy_rollout, optimal_q, policy_agreement, train
 from marl.single_env import RewardConfig, SingleRobotEnv
 
@@ -62,7 +62,7 @@ def run_one(job):
 
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    ap.add_argument('--maps', nargs='+', default=available_maps(), choices=available_maps())
+    ap.add_argument('--maps', nargs='+', default=PAPER_MAPS, choices=available_maps())
     ap.add_argument('--seeds', type=int, default=10, help='independent runs per robot (paper: 10)')
     ap.add_argument('--episodes', type=int, default=10_000)
     ap.add_argument('--alpha', type=float, default=0.05)

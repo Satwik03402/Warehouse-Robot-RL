@@ -97,5 +97,8 @@ class Grid:
         return '\n'.join(lines)
 
 
+PAPER_MAPS = ['ttg', 'tr', 'isr', 'cit', 'cmu']  # Figure 5 of De Hauwere et al. (2010)
+
+
 def available_maps():
     return sorted(p.stem for p in MAP_DIR.glob('*.json'))
