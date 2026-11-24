@@ -1,0 +1,21 @@
+{
+  "name": "tr",
+  "title": "Two Robot game",
+  "source": "De Hauwere, Vrancx & Nowe, AAMAS 2010, Figure 5; transcribed with marl/maps/extract_fig5.py",
+  "note": "",
+  "expected_free_cells": 36,
+  "grid": [
+    "#..#..#",
+    "...#...",
+    ".......",
+    "##.#.##",
+    ".......",
+    "...#...",
+    "#..#..#"
+  ],
+  "walls": [],
+  "agents": [
+    {"start": [1, 6], "goal": [5, 0]},
+    {"start": [5, 6], "goal": [1, 0]}
+  ]
+}

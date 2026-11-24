@@ -1,0 +1,44 @@
+{
+  "name": "warehouse",
+  "title": "Warehouse (16x12, 24 shelf cells)",
+  "source": "warehouse/layout.py LAYOUT (the project's existing single-robot warehouse)",
+  "note": "Robot 1 runs the layout start -> goal; robot 2 runs the reverse, so they meet head-on in the aisles.",
+  "expected_free_cells": 168,
+  "grid": [
+    "................",
+    "................",
+    ".....##...##....",
+    ".....##...##....",
+    ".....##...##....",
+    "................",
+    "................",
+    ".....##...##....",
+    ".....##...##....",
+    ".....##...##....",
+    "................",
+    "................"
+  ],
+  "walls": [],
+  "agents": [
+    {
+      "start": [
+        1,
+        1
+      ],
+      "goal": [
+        14,
+        10
+      ]
+    },
+    {
+      "start": [
+        14,
+        10
+      ],
+      "goal": [
+        1,
+        1
+      ]
+    }
+  ]
+}

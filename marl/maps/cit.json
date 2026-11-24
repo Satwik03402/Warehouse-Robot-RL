@@ -1,0 +1,26 @@
+{
+  "name": "cit",
+  "title": "CIT",
+  "source": "De Hauwere, Vrancx & Nowe, AAMAS 2010, Figure 5; transcribed with marl/maps/extract_fig5.py",
+  "note": "Each agent starts on the other agent's goal.",
+  "expected_free_cells": 69,
+  "grid": [
+    "###..........#",
+    "####.#######.#",
+    "####...####..#",
+    ".###.#.......#",
+    ".....#.###.#.#",
+    ".#####...###.#",
+    ".######.####.#",
+    ".#####........",
+    ".#####.###.###",
+    ".###.......###",
+    ".....#########",
+    ".###.#########"
+  ],
+  "walls": [],
+  "agents": [
+    {"start": [3, 11], "goal": [8, 6]},
+    {"start": [8, 6], "goal": [3, 11]}
+  ]
+}
